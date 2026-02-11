@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY MWAP_MCPserver.py .
 COPY serve.py .
-COPY .env .
 
 # Expose port (Railway will set PORT env var)
 EXPOSE 8000
