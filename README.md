@@ -10,27 +10,60 @@ Model Context Protocol (MCP) server for the MetaWealth Asset Launch Dashboard. T
 - 🌐 **SSE Transport**: Server-Sent Events for reliable AI assistant connections
 - 🚀 **Production Ready**: Dockerized and optimized for cloud deployment
 
-## Quick Deploy to Railway
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/your-template-id)
+## Deploy to Railway
 
 ### Step-by-Step Deployment
 
-1. **Click "Deploy on Railway"** button above (or follow manual steps below)
+1. **Push to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Add Railway configuration"
+   git push origin main
+   ```
 
-2. **Set Environment Variables:**
+2. **Create New Project on Railway:**
+   - Go to [railway.app](https://railway.app)
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose your repository: `mwid-mcp-server`
+
+3. **Configure Environment Variables:**
+   
+   In Railway Dashboard → Variables, add these required variables:
    ```
    MWID_API_URL=https://your-backend-api.com/api/v1
    MWID_AUTH_METHOD=jwt
    MWID_JWT_TOKEN=your-jwt-token-here
    ```
+   
+   Optional variables:
+   ```
+   MWID_REQUEST_TIMEOUT=30
+   MWID_DEBUG=false
+   ```
 
-3. **Get Your MCP Server URL:**
-   Railway will provide a URL like: `https://mwid-mcp-server-production.railway.app`
+4. **Railway Auto-Detection:**
+   
+   Railway will automatically detect:
+   - ✅ `Dockerfile` for containerized deployment
+   - ✅ `railway.json` for build/deploy configuration
+   - ✅ `Procfile` for process management
+   - ✅ Port configuration (Railway sets `PORT` automatically)
 
-4. **Configure Your AI Assistant:**
-   - **ChatGPT**: Add MCP server at `https://your-app.railway.app/sse`
-   - **Claude Desktop**: Add to `claude_desktop_config.json`
+5. **Deploy:**
+   
+   Railway will automatically build and deploy. Monitor the deployment in the Railway dashboard logs.
+
+6. **Get Your MCP Server URL:**
+   
+   Railway provides a public URL like: `https://mwid-mcp-server-production-xxxx.up.railway.app`
+   
+   You can also set a custom domain in Railway settings.
+
+7. **Configure Your AI Assistant:**
+   
+   - **ChatGPT**: Add MCP server at `https://your-railway-url.railway.app/sse`
+   - **Claude Desktop**: Add to `claude_desktop_config.json` (see configuration below)
 
 ## Manual Deployment
 
