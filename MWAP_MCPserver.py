@@ -6,6 +6,72 @@ This MCP server provides AI models with access to the MetaWealth Asset Launch Da
 It enables natural language interaction with asset management, task tracking, user management,
 and other dashboard features.
 
+FEATURE STATUS:
+===============
+
+✅ WORKING FEATURES (External API - No JWT Required):
+- list_manual_sales: List sales records with filtering/pagination (3,692+ records)
+- get_manual_sale: Get specific sale details by ID
+- list_manual_investors: List investor records with filtering/pagination (1,064+ records)
+- get_manual_investor: Get specific investor details by ID
+
+⚠️ FUTURE FEATURES (Internal API - Requires JWT Token):
+These features require MWID_JWT_TOKEN to be configured in environment variables.
+Currently not accessible without valid JWT authentication.
+
+Asset Management:
+- get_current_user: Get authenticated user information
+- list_assets: List all assets in dashboard
+- get_asset: Get detailed asset information
+- create_asset: Create new asset with workflow
+- update_asset: Update existing asset details
+- delete_asset: Delete asset (admin only)
+- get_asset_phases: Get all phases for an asset
+- get_asset_tasks: Get all tasks for an asset
+- calculate_minimum_time: Calculate task completion time
+
+Task Management:
+- get_task: Get task details
+- update_task: Update task information
+- assign_task: Assign task to user(s)
+- unassign_task: Remove task assignment
+- get_task_comments: Get task comments
+- create_task_comment: Add comment to task
+- get_task_progress: Get instruction progress
+- update_task_progress: Update instruction completion
+- get_my_department_tasks: Get department tasks
+- get_assigned_tasks: Get user's assigned tasks
+- get_unassigned_tasks: Get unassigned department tasks
+
+Phase Management:
+- update_phase: Update phase details
+- get_phase_tasks: Get tasks for a phase
+
+User & Department Management:
+- list_users: List all users (admin only)
+- get_user: Get user details
+- get_users_for_assignment: Get assignable users
+- get_my_team: Get team members
+- get_department_members: Get department members
+- list_departments: List all departments
+- get_department: Get department details
+- get_department_stats: Get department statistics
+
+Notifications:
+- get_notifications: Get user notifications
+- get_unread_notification_count: Get unread count
+- mark_notification_read: Mark notification as read
+- mark_all_notifications_read: Mark all as read
+
+Workflow Templates:
+- list_workflow_templates: List available templates
+- get_workflow_template: Get template details
+- apply_workflow_template: Apply template to asset
+
+Legacy Internal API:
+- list_investor_records: List internal investor records
+- get_investor_record: Get internal investor record details
+
 Author: MetaWealth Team
 License: MIT
 """

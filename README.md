@@ -154,32 +154,76 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 The server provides 40+ tools organized into these categories:
 
-### Asset Management
+### ✅ Working Features (External API - No JWT Required)
+
+These tools work immediately with just the `MWID_EXTERNAL_API_KEY`:
+
+#### Sales & Investor Data
+- `list_manual_sales` - List sales records with filtering/pagination (3,692+ records)
+  - Filters: `userId`, `assetId`, `adjustmentType`
+  - Pagination: `page`, `pageSize` (max 500)
+- `get_manual_sale` - Get specific sale details by ID
+- `list_manual_investors` - List investor records with filtering/pagination (1,064+ records)
+  - Filters: `email`, `userId`, `country`
+  - Pagination: `page`, `pageSize` (max 500)
+- `get_manual_investor` - Get specific investor details by ID
+
+### ⚠️ Future Features (Internal API - Requires JWT Token)
+
+These tools require `MWID_JWT_TOKEN` to be configured. They will return 403 errors until JWT authentication is set up.
+
+#### Asset Management
+- `get_current_user` - Get authenticated user info
 - `list_assets` - List all assets
 - `get_asset` - Get asset details
 - `create_asset` - Create new asset
 - `update_asset` - Update asset
+- `delete_asset` - Delete asset (admin only)
 - `get_asset_phases` - Get asset phases
 - `get_asset_tasks` - Get tasks for asset
+- `calculate_minimum_time` - Calculate task completion time
 
-### Task Management
-- `list_tasks` - List tasks
+#### Task Management
 - `get_task` - Get task details
 - `update_task` - Update task
 - `assign_task` - Assign task to user
+- `unassign_task` - Remove task assignment
 - `get_assigned_tasks` - Get user's assigned tasks
 - `get_unassigned_tasks` - Get unassigned tasks
+- `get_my_department_tasks` - Get department tasks
 - `get_task_comments` - Get task comments
 - `create_task_comment` - Add comment to task
+- `get_task_progress` - Get task progress
+- `update_task_progress` - Update task progress
 
-### User & Department Management
-- `list_users` - List all users
-- `get_current_user` - Get authenticated user info
-- `list_departments` - List departments
+#### Phase Management
+- `update_phase` - Update phase details
+- `get_phase_tasks` - Get tasks for a phase
+
+#### User & Department Management
+- `list_users` - List all users (admin only)
+- `get_user` - Get user details
+- `get_users_for_assignment` - Get assignable users
+- `get_my_team` - Get team members
 - `get_department_members` - Get department members
-- `get_my_team` - Get user's team
+- `list_departments` - List departments
+- `get_department` - Get department details
+- `get_department_stats` - Get department statistics
 
-### And many more...
+#### Notifications
+- `get_notifications` - Get user notifications
+- `get_unread_notification_count` - Get unread count
+- `mark_notification_read` - Mark notification as read
+- `mark_all_notifications_read` - Mark all as read
+
+#### Workflow Templates
+- `list_workflow_templates` - List available templates
+- `get_workflow_template` - Get template details
+- `apply_workflow_template` - Apply template to asset
+
+#### Legacy Internal API
+- `list_investor_records` - List internal investor records
+- `get_investor_record` - Get internal investor record details
 
 ## Architecture
 
