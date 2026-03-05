@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     supabase_email: str = Field(default="", alias="MWID_SUPABASE_EMAIL")
     supabase_password: str = Field(default="", alias="MWID_SUPABASE_PASSWORD")
     google_access_token: str = Field(default="", alias="MWID_GOOGLE_ACCESS_TOKEN")
+    external_api_url: str = Field(default="https://mwid.up.railway.app/api/v1/external", alias="MWID_EXTERNAL_API_URL")
+    external_api_key: str = Field(default="", alias="MWID_EXTERNAL_API_KEY")
     request_timeout: int = Field(default=30, alias="MWID_REQUEST_TIMEOUT")
     debug: bool = Field(default=False, alias="MWID_DEBUG")
     
@@ -213,6 +215,41 @@ class MWIDMCPServer:
         response.raise_for_status()
         
         # Return JSON if available, otherwise text
+        try:
+            return response.json()
+        except:
+            return response.text
+    
+    async def _external_api_request(
+        self,
+        method: str,
+        endpoint: str,
+        params: Optional[Dict] = None
+    ) -> Any:
+        """Make API request to external endpoints using X-API-Key auth"""
+        if self.client is None:
+            await self._initialize_client()
+        
+        if not self.settings.external_api_key:
+            raise ValueError("External API key not configured. Set MWID_EXTERNAL_API_KEY in .env")
+        
+        url = f"{self.settings.external_api_url}{endpoint}"
+        headers = {
+            "X-API-Key": self.settings.external_api_key,
+            "Content-Type": "application/json"
+        }
+        
+        self.logger.debug(f"EXTERNAL {method} {url}")
+        
+        response = await self.client.request(
+            method=method,
+            url=url,
+            headers=headers,
+            params=params
+        )
+        
+        response.raise_for_status()
+        
         try:
             return response.json()
         except:
@@ -802,28 +839,99 @@ class MWIDMCPServer:
                 }
             ),
             
-            # Investor Records Tools
+            # Manual Sales Tools (External API)
             Tool(
-                name="list_investor_records",
-                description="List investor records",
+                name="list_manual_sales",
+                description="List manual sales records with optional filtering and pagination. Returns sales data including amount, currency, asset info, approval status, and investor details.",
                 inputSchema={
                     "type": "object",
-                    "properties": {},
+                    "properties": {
+                        "page": {
+                            "type": "integer",
+                            "description": "Page number (default: 1)",
+                            "default": 1
+                        },
+                        "pageSize": {
+                            "type": "integer",
+                            "description": "Number of items per page (default: 100, max: 500)",
+                            "default": 100
+                        },
+                        "userId": {
+                            "type": "string",
+                            "description": "Filter by user/investor ID"
+                        },
+                        "assetId": {
+                            "type": "string",
+                            "description": "Filter by asset ID"
+                        },
+                        "adjustmentType": {
+                            "type": "string",
+                            "description": "Filter by adjustment type (e.g. ADD)"
+                        }
+                    },
                     "required": []
                 }
             ),
             Tool(
-                name="get_investor_record",
-                description="Get detailed information about a specific investor record",
+                name="get_manual_sale",
+                description="Get detailed information about a specific manual sale by ID",
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "record_id": {
+                        "sale_id": {
                             "type": "string",
-                            "description": "UUID of the investor record"
+                            "description": "UUID of the manual sale record"
                         }
                     },
-                    "required": ["record_id"]
+                    "required": ["sale_id"]
+                }
+            ),
+            
+            # Manual Investors Tools (External API)
+            Tool(
+                name="list_manual_investors",
+                description="List manual investor records with optional filtering and pagination. Returns investor profiles including name, email, country, and account type.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "page": {
+                            "type": "integer",
+                            "description": "Page number (default: 1)",
+                            "default": 1
+                        },
+                        "pageSize": {
+                            "type": "integer",
+                            "description": "Number of items per page (default: 100, max: 500)",
+                            "default": 100
+                        },
+                        "email": {
+                            "type": "string",
+                            "description": "Filter by investor email"
+                        },
+                        "userId": {
+                            "type": "string",
+                            "description": "Filter by user/investor ID"
+                        },
+                        "country": {
+                            "type": "string",
+                            "description": "Filter by country"
+                        }
+                    },
+                    "required": []
+                }
+            ),
+            Tool(
+                name="get_manual_investor",
+                description="Get detailed information about a specific manual investor by ID",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "investor_id": {
+                            "type": "string",
+                            "description": "UUID of the manual investor record"
+                        }
+                    },
+                    "required": ["investor_id"]
                 }
             ),
         ]
@@ -999,13 +1107,29 @@ class MWIDMCPServer:
             return await self._api_request("POST", f"/workflow-templates/{template_id}/apply", 
                                           json_data={"asset_id": asset_id})
         
-        # Investor Records Tools
-        elif name == "list_investor_records":
-            return await self._api_request("GET", "/investor-records")
+        # Manual Sales Tools (External API)
+        elif name == "list_manual_sales":
+            params = {}
+            for key in ["page", "pageSize", "userId", "assetId", "adjustmentType"]:
+                if key in arguments:
+                    params[key] = arguments[key]
+            return await self._external_api_request("GET", "/manual-sales", params=params)
         
-        elif name == "get_investor_record":
-            record_id = arguments["record_id"]
-            return await self._api_request("GET", f"/investor-records/{record_id}")
+        elif name == "get_manual_sale":
+            sale_id = arguments["sale_id"]
+            return await self._external_api_request("GET", f"/manual-sales/{sale_id}")
+        
+        # Manual Investors Tools (External API)
+        elif name == "list_manual_investors":
+            params = {}
+            for key in ["page", "pageSize", "email", "userId", "country"]:
+                if key in arguments:
+                    params[key] = arguments[key]
+            return await self._external_api_request("GET", "/manual-investors", params=params)
+        
+        elif name == "get_manual_investor":
+            investor_id = arguments["investor_id"]
+            return await self._external_api_request("GET", f"/manual-investors/{investor_id}")
         
         else:
             raise ValueError(f"Unknown tool: {name}")
