@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # Allow extra env vars like PORT
 
 
 class MWIDMCPServer:
@@ -107,9 +108,6 @@ class MWIDMCPServer:
                 error_msg = f"Error executing tool '{name}': {str(e)}"
                 self.logger.error(error_msg, exc_info=True)
                 return [TextContent(type="text", text=f"Error: {error_msg}")]
-    
-        self.authenticated = True
-        self.logger.info("Successfully authenticated with Supabase")
     
     async def _initialize_client(self):
         """Initialize HTTP client and authenticate if needed"""
