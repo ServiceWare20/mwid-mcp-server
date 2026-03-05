@@ -42,6 +42,10 @@ After deployment, click on your service → Variables tab → Add these:
 MWID_API_URL=https://your-backend-api-url.com/api/v1
 MWID_AUTH_METHOD=jwt
 MWID_JWT_TOKEN=your-actual-jwt-token-here
+
+# Required for Sales & Investors tools
+MWID_EXTERNAL_API_URL=https://mwid.up.railway.app/api/v1/external
+MWID_EXTERNAL_API_KEY=your-external-api-key-here
 ```
 
 ## Step 3: Get Your Railway URL

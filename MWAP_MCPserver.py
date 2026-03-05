@@ -108,6 +108,9 @@ class MWIDMCPServer:
                 self.logger.error(error_msg, exc_info=True)
                 return [TextContent(type="text", text=f"Error: {error_msg}")]
     
+        self.authenticated = True
+        self.logger.info("Successfully authenticated with Supabase")
+    
     async def _initialize_client(self):
         """Initialize HTTP client and authenticate if needed"""
         self.client = httpx.AsyncClient(timeout=self.settings.request_timeout)
@@ -121,7 +124,7 @@ class MWIDMCPServer:
         elif self.settings.auth_method == "google":
             await self._authenticate_google()
         else:
-            self.logger.warning("No authentication configured")
+            self.logger.warning(f"No authentication configured or missing credentials for method: {self.settings.auth_method}. Internal API requests may fail with 401/403.")
     
     async def _authenticate_supabase(self):
         """Authenticate with Supabase and get JWT token"""
@@ -204,21 +207,33 @@ class MWIDMCPServer:
         
         self.logger.debug(f"{method} {url}")
         
-        response = await self.client.request(
-            method=method,
-            url=url,
-            headers=headers,
-            params=params,
-            json=json_data
-        )
-        
-        response.raise_for_status()
-        
-        # Return JSON if available, otherwise text
         try:
-            return response.json()
-        except:
-            return response.text
+            response = await self.client.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=params,
+                json=json_data
+            )
+            
+            response.raise_for_status()
+            
+            try:
+                return response.json()
+            except:
+                return response.text
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in [401, 403]:
+                error_detail = (
+                    f"Authentication failed (HTTP {e.response.status_code}) for internal API request. "
+                    "Please verify MWID_JWT_TOKEN or Supabase/Google credentials in your environment."
+                )
+                self.logger.error(f"{error_detail} Response: {e.response.text}")
+                raise ValueError(error_detail)
+            raise
+        except Exception as e:
+            self.logger.error(f"Internal API error: {str(e)}")
+            raise
     
     async def _external_api_request(
         self,
@@ -241,19 +256,26 @@ class MWIDMCPServer:
         
         self.logger.debug(f"EXTERNAL {method} {url}")
         
-        response = await self.client.request(
-            method=method,
-            url=url,
-            headers=headers,
-            params=params
-        )
-        
-        response.raise_for_status()
-        
         try:
+            response = await self.client.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=params
+            )
+            
+            response.raise_for_status()
+            
             return response.json()
-        except:
-            return response.text
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in [401, 403]:
+                error_detail = f"Authentication failed (HTTP {e.response.status_code}). Please verify MWID_EXTERNAL_API_KEY in your environment variables."
+                self.logger.error(f"{error_detail} Response: {e.response.text}")
+                raise ValueError(error_detail)
+            raise
+        except Exception as e:
+            self.logger.error(f"External API error: {str(e)}")
+            raise
     
     def _get_all_tools(self) -> List[Tool]:
         """Get all available tools"""
@@ -934,6 +956,31 @@ class MWIDMCPServer:
                     "required": ["investor_id"]
                 }
             ),
+            
+            # Internal Investor Records Tools (Legacy Support)
+            Tool(
+                name="list_investor_records",
+                description="List internal investor records (Legacy tool using internal API)",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            ),
+            Tool(
+                name="get_investor_record",
+                description="Get detailed internal information about a specific investor record (Legacy tool using internal API)",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "record_id": {
+                            "type": "string",
+                            "description": "UUID of the investor record"
+                        }
+                    },
+                    "required": ["record_id"]
+                }
+            ),
         ]
     
     async def _handle_tool_call(self, name: str, arguments: dict) -> Any:
@@ -1130,6 +1177,14 @@ class MWIDMCPServer:
         elif name == "get_manual_investor":
             investor_id = arguments["investor_id"]
             return await self._external_api_request("GET", f"/manual-investors/{investor_id}")
+        
+        # Internal Investor Records Tools (Legacy Support)
+        elif name == "list_investor_records":
+            return await self._api_request("GET", "/investor-records")
+        
+        elif name == "get_investor_record":
+            record_id = arguments["record_id"]
+            return await self._api_request("GET", f"/investor-records/{record_id}")
         
         else:
             raise ValueError(f"Unknown tool: {name}")
